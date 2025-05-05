@@ -5,6 +5,3 @@ __pycache__/
 data/input/face_recog/face_images/
 data/input/face_recog/dataset/
 data/input/face_recog/dataset_split/
-data/input/face_recog/test/
-test_images/
-test/
