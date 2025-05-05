@@ -57,3 +57,11 @@ class COSINEConfig:
     FACE_RECOGNITION_MODEL: str = FaceRecogConfig.FACE_RECOGNITION_MODEL
     ALIGN_FACES: bool = FaceRecogConfig.ALIGN_FACES
     RECOGNIZER: str = FaceRecogConfig.RECOGNIZER
+
+@dataclass
+class ObjectDetectionConfig:
+    # Object detection specific configurations
+    MODEL_PATH: Path = Path(__file__).parent.resolve() / "models/object_detection/yolo11n.pt"
+    DETECTOR_BACKEND: str = "yolov11n"
+    DEVICE: str = "cuda"  # Options: "cpu", "cuda"
+    TEST_PATH: Path = Path(__file__).parent.resolve() / "../data/input/obj_det/test_images"
