@@ -1,16 +1,19 @@
 import cv2
-import pickle
-import json
 import numpy as np
 from deepface import DeepFace
+import os
+
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, Optional, Union
+
 from sklearn.svm import SVC
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import LabelEncoder
+
 from app.models.face_recognition.svm_model import SVMFaceRecognizer
 from app.models.face_recognition.Embedder import FaceEmbeddingManager
-from app.config import FaceRecogConfig, get_dynamic_config
+from app.config import FaceRecogConfig,COSINEConfig, get_dynamic_config
+
 
 
 def recognize_faces(
@@ -65,7 +68,7 @@ def load_svm_model(model_path:Union[str,Path] = FaceRecogConfig.SVM_MODEL_PATH,
     if svm_model is not None and  svm_label_encoder is not None:
         return svm_model,  svm_label_encoder,svm_conf_threshold
     # Load the trained SVM model
-    svm_recognizer =SVMFaceRecognizer(model_path=model_path, label_encoder_path=label_path)
+    svm_recognizer =SVMFaceRecognizer(svm_model_path=model_path, label_encoder_path=label_path)
     svm_model = svm_recognizer.svm_model
     svm_label_encoder = svm_recognizer.label_encoder
     svm_conf_threshold = svm_recognizer.best_threshold
@@ -73,7 +76,8 @@ def load_svm_model(model_path:Union[str,Path] = FaceRecogConfig.SVM_MODEL_PATH,
     if svm_model is None or svm_label_encoder is None:
         raise ValueError("SVM model or label encoder not found. Please train the model first.")
 
-   
+    if svm_model:
+        print(f"SVM model loaded")
     return svm_model, svm_label_encoder,svm_conf_threshold
 
 def recognize_faces_svm(
@@ -164,7 +168,7 @@ def recognize_faces_svm(
 Embeddings=None
 COSINE_CONF_THRESHOLD = get_dynamic_config().get("BEST_COSINE_THRESHOLD", 0.5)
 
-def load_embeddings(embeddings_path: Union[str, Path] = FaceRecogConfig.EMBEDDINGS_PATH) -> Dict[str, Any]:
+def load_embeddings(embeddings_path: Union[str, Path] = COSINEConfig.EMBEDDING_PATH) -> Dict[str, Any]:
     """
     Load the embeddings from the specified path.
     Args:
@@ -177,12 +181,12 @@ def load_embeddings(embeddings_path: Union[str, Path] = FaceRecogConfig.EMBEDDIN
     global Embeddings
     if Embeddings is not None:
         return Embeddings
-    embedding_manager = FaceEmbeddingManager(embeddings_path=embeddings_path)
+    embedding_manager = FaceEmbeddingManager(emb_path=embeddings_path,)
     _ = embedding_manager.load_embeddings()
-    embeddings = embedding_manager.get_flatten_embeddings()
+    embeddings,labels = embedding_manager.get_flatten_embeddings()
     if embeddings is None:
         raise ValueError("Failed to load embeddings. Please check the file format.")
-    return embeddings
+    return embeddings,labels
 
 
 def recognize_faces_cosine(
@@ -229,7 +233,7 @@ def recognize_faces_cosine(
     assert len(detections) == len(frames), "Number of frames and detections do not match"
     
     results = []
-    embeddings = load_embeddings()
+    embeddings,labels = load_embeddings()
     for idx, frame_detections in enumerate(detections):
         frame = frames[idx]
         recognized_faces = []
@@ -251,14 +255,14 @@ def recognize_faces_cosine(
             best_idx = None
             best_score = -1.0
 
-            for idx, stored_embedding in enumerate(embeddings):
+            for stored_embedding,name in zip(embeddings,labels):
                 score = cosine_similarity([embedding], [stored_embedding])[0][0]
                 if score > best_score:
                     best_score = score
-                    best_idx = idx
+                    best_match = name
 
             confidence = best_score
-            name = str(best_idx) if confidence >= COSINE_CONF_THRESHOLD else "Unknown"
+            name = str(best_match) if confidence >= COSINE_CONF_THRESHOLD else "Unknown"
 
             # Draw bounding box and label
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
@@ -342,3 +346,23 @@ def recognize_faces_vectordb(
             "recognized_faces": recognized_faces
         })
     return results
+
+if __name__ == "__main__":
+    # Example usage
+    import time
+    start = time.time()
+    test_path = FaceRecogConfig.TEST_PATH  # Path to test images
+    frames = []
+    for file in os.listdir(test_path):
+        if file.endswith(".jpg") or file.endswith(".png") or file.endswith(".jpeg"):
+            image_path = os.path.join(test_path, file)
+            image = cv2.imread(image_path, cv2.IMREAD_COLOR_RGB)
+            frames.append(image)
+    results = recognize_faces(frames, input_format="BGR")
+    end = time.time()
+    print(f"Time taken for face recognition: {end - start:.2f} seconds")
+    print("FPS: {:.2f}".format(len(frames)/(end-start)))
+    for result in results:
+        cv2.imshow("Recognized Faces", result["frame"])
+        cv2.waitKey(0)
+    cv2.destroyAllWindows()

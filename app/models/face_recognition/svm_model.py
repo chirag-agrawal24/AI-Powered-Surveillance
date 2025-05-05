@@ -162,7 +162,7 @@ if __name__ == "__main__":
     svm_recognizer = SVMFaceRecognizer()
     print("Training SVM model on dataset:", SVMConfig.DATESET_PATH)
     
-    svm_recognizer.train_svm_model(dataset_path=SVMConfig.DATESET_PATH,force=False)
+    svm_recognizer.train_svm_model(dataset_path=SVMConfig.DATESET_PATH,force=True)
     # Load the model later
     svm_recognizer.load_svm_model()
 

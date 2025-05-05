@@ -54,7 +54,6 @@ def detect_objects(frames:List[np.array])-> list:
         logger.error(f"Error in object detection: {str(e)}")
         return []
 if __name__ == "__main__":
-    import os
     import cv2
     test_path = ObjectDetectionConfig.TEST_PATH  # Path to test images
     frames = []

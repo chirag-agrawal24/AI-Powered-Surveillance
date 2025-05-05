@@ -30,7 +30,8 @@ class FaceRecogConfig:
     FACE_DETECTOR_BACKEND: str = "yolov11n"  # Options: "opencv", "ssd", "dlib", etc.
     FACE_RECOGNITION_MODEL: str = "ArcFace"  # Options: "VGG-Face", "Facenet", etc.
     ALIGN_FACES: bool = False  # Whether to align faces before recognition
-    RECOGNIZER : str = "SVM"  # Options: "SVM", "COSINE"
+    RECOGNIZER : str = "COSINE"  # Options: "SVM", "COSINE"
+    TEST_PATH: Path = Path(__file__).parent.resolve() / "../data/input/face_recog/test"
 
 
 
