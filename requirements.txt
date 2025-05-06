@@ -1,4 +1,4 @@
-tensorflow<=2.13
+tensorflow<=2.15.1
 ultralytics
 git+https://github.com/chirag-agrawal24/deepface.git
 scikit-learn== 1.5.0

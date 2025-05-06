@@ -76,7 +76,7 @@ class ServerConfig:
     PORT: int = 8000
     DEBUG: bool = True
     WORKERS: int = 1
-    STATIC_DIR: str  = "app/static"
+    STATIC_DIR: str  = Path("app/static")
     TEMPLATES_DIR: str =  "app/templates"
 
 BATCH_ID_JSON = Path(__file__).parent.resolve()/"utils/batch_id.json"

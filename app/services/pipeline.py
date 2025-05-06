@@ -118,10 +118,10 @@ async def caption_worker():
 async def enqueue_batch(username: str, camera_number: str, batch_id: int, frames: List[FrameData]):
     """Adds a new batch from a specific user/camera to the processing pipeline."""
     # Optional: Check if this batch ID is already processed or in buffer to prevent duplicates
-    if batch_id in results_buffer.get(username, {}).get(camera_number, {}):
-        print(f"Warning: Batch {batch_id} for {username}/{camera_number} already exists in buffer. Skipping enqueue.")
-        # Depending on desired behavior, you might raise an error or just ignore
-        return False # Indicate not enqueued
+    # if batch_id in results_buffer.get(username, {}).get(camera_number, {}):
+    #     print(f"Warning: Batch {batch_id} for {username}/{camera_number} already exists in buffer. Skipping enqueue.")
+    #     # Depending on desired behavior, you might raise an error or just ignore
+    #     return False # Indicate not enqueued
 
     await input_queue.put((username, camera_number, batch_id, frames))
     print(f"Batch {batch_id} for user {username}, camera {camera_number} enqueued.")
