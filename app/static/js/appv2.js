@@ -87,7 +87,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 captureInterval = setInterval(captureFrame, 1000 / targetFPS);
                 fpsUpdateInterval = setInterval(updateFPS, 1000);
                 renderFramesLoop();
-
+                // Clear and reset the canvas before starting
+                previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                previewContext.fillStyle = 'black';
+                previewContext.fillRect(0, 0, previewCanvas.width, previewCanvas.height); // Fill with black background
                 startButton.disabled = true;
                 stopButton.disabled = false;
                 statusText.textContent = 'Active';
@@ -119,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
         frameBuffer = [];
         displayQueue = [];
         batchQueue = [];
-
+        previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);  // Clears canvas
         previewContext.fillStyle = 'black';
         previewContext.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
         previewContext.fillStyle = 'white';
@@ -162,8 +165,8 @@ document.addEventListener('DOMContentLoaded', () => {
     formData.append('batch_id', batchId);
 
     frameBatch.forEach(({ blob, timestamp }, index) => {
-        formData.append(`frame_${index}`, blob, `frame_${index}.jpg`);
-        formData.append(`timestamp_${index}`, timestamp);
+        formData.append(`files`, blob, `frame_${index}.jpg`);
+        formData.append(`timestamps`, timestamp);
     });
 
     try {
@@ -262,11 +265,11 @@ document.addEventListener('DOMContentLoaded', () => {
             img.onload = () => {
                 previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
                 previewContext.drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
-    
                 previewContext.fillStyle = 'rgba(0, 0, 0, 0.5)';
-                previewContext.fillRect(10, previewCanvas.height - 70, 320, 50);
+                previewContext.fillRect(10, previewCanvas.height - 70, 320, 70);
                 previewContext.fillStyle = 'white';
                 previewContext.font = '14px Arial';
+                previewContext.textAlign = 'left';
                 previewContext.fillText(`Frame: ${frameNumber}`, 15, previewCanvas.height - 55);
                 previewContext.fillText(`Time: ${new Date(timestamp).toLocaleTimeString()}`, 15, previewCanvas.height - 35);
                 previewContext.fillText(`Caption: ${caption}`, 15, previewCanvas.height - 15);

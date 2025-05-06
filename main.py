@@ -276,16 +276,20 @@ async def process_batch(
     }
        
 @app.post("/api/v2/get_result", response_model=Optional[BatchResponse])
-async def get_result_v2(data: ResultRequest = Body(...)):
+async def get_result_v2(
+    username: str = Form(...),
+    camera_number: str = Form(...),
+    batch_id: Union[str,int,float] = Form(...),
+    ):
     """
     API endpoint for the frontend to retrieve the results of a specific processed batch.
     If found, the result is returned and removed from the server buffer.
     """
     
-    result = pipeline.get_batch_result(data.username, data.camera_number, data.batch_id)
+    result = pipeline.get_batch_result(username, camera_number, batch_id)
     if result is None:
         # Result not found (either not processed yet, already retrieved, or invalid ID)
-        raise HTTPException(status_code=404, detail=f"Result for Batch ID {data.batch_id} (User: {data.username}, Cam: {data.camera_number}) not found.")
+        raise HTTPException(status_code=404, detail=f"Result for Batch ID {batch_id} (User: {username}, Cam: {camera_number}) not found.")
     return result # FastAPI will automatically serialize the BatchResponse model
 
 

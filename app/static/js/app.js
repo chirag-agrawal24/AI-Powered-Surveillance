@@ -262,11 +262,12 @@ document.addEventListener('DOMContentLoaded', () => {
             img.onload = () => {
                 previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
                 previewContext.drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
-    
+                
                 previewContext.fillStyle = 'rgba(0, 0, 0, 0.5)';
-                previewContext.fillRect(10, previewCanvas.height - 70, 320, 50);
+                previewContext.fillRect(10, previewCanvas.height - 70, 320, 70);
                 previewContext.fillStyle = 'white';
                 previewContext.font = '14px Arial';
+                previewContext.textAlign = 'left';
                 previewContext.fillText(`Frame: ${frameNumber}`, 15, previewCanvas.height - 55);
                 previewContext.fillText(`Time: ${new Date(timestamp).toLocaleTimeString()}`, 15, previewCanvas.height - 35);
                 previewContext.fillText(`Caption: ${caption}`, 15, previewCanvas.height - 15);
