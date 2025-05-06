@@ -1,5 +1,8 @@
 tensorflow<=2.13
-typing-extensions==4.10.0
 ultralytics
 git+https://github.com/chirag-agrawal24/deepface.git
 scikit-learn== 1.5.0
+fastapi
+uvicorn
+pydantic
+typing-extensions==4.10.0

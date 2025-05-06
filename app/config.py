@@ -66,3 +66,15 @@ class ObjectDetectionConfig:
     DETECTOR_BACKEND: str = "yolov11n"
     DEVICE: str = "cuda"  # Options: "cpu", "cuda"
     TEST_PATH: Path = Path(__file__).parent.resolve() / "../data/input/obj_det/test_images"
+
+@dataclass
+class ServerConfig:
+    # Server specific configurations
+    HOST: str = "0.0.0.0"
+    PORT: int = 8000
+    DEBUG: bool = True
+    WORKERS: int = 1
+    STATIC_DIR: Path = Path(__file__).parent.resolve() / "static"
+    TEMPLATES_DIR: Path = Path(__file__).parent.resolve() / "templates"
+
+BATCH_ID_JSON = Path(__file__).parent.resolve()/"utils/batch_id.json"

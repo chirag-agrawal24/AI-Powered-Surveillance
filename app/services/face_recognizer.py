@@ -45,6 +45,14 @@ def recognize_faces(
     detector_backend = detector_backend or FaceRecogConfig.FACE_DETECTOR_BACKEND
     normalization = normalization or FaceRecogConfig.FACE_RECOGNITION_MODEL
     align = align if align is not None else FaceRecogConfig.ALIGN_FACES
+    if input_format == "RGB":
+        frames = [cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) for frame in frames]
+        input_format = "BGR"
+    # updated_frames = []
+    # for frame in frames:
+    #     frame = cv2.resize(frame, (640,360), interpolation=cv2.INTER_LINEAR)
+    #     updated_frames.append(frame)
+    # frames = updated_frames
     
     if FaceRecogConfig.RECOGNIZER == "SVM":
         return recognize_faces_svm(frames, input_format, model_name, detector_backend, normalization, align)
@@ -64,9 +72,9 @@ def load_svm_model(model_path:Union[str,Path] = FaceRecogConfig.SVM_MODEL_PATH,
     Load the SVM model and label dictionary from the specified paths.
     """
 
-    global svm_model, svm_label_encoder
+    global svm_model, svm_label_encoder,svm_conf_threshold
     if svm_model is not None and  svm_label_encoder is not None:
-        return svm_model,  svm_label_encoder,svm_conf_threshold
+        return svm_model, svm_label_encoder,svm_conf_threshold
     # Load the trained SVM model
     svm_recognizer =SVMFaceRecognizer(svm_model_path=model_path, label_encoder_path=label_path)
     svm_model = svm_recognizer.svm_model
@@ -166,6 +174,7 @@ def recognize_faces_svm(
     return results
 
 Embeddings=None
+labels=None
 COSINE_CONF_THRESHOLD = get_dynamic_config().get("BEST_COSINE_THRESHOLD", 0.5)
 
 def load_embeddings(embeddings_path: Union[str, Path] = COSINEConfig.EMBEDDING_PATH) -> Dict[str, Any]:
@@ -178,15 +187,16 @@ def load_embeddings(embeddings_path: Union[str, Path] = COSINEConfig.EMBEDDING_P
     """
     if not Path(embeddings_path).exists():
         raise FileNotFoundError(f"Embeddings file not found at {embeddings_path}.")
-    global Embeddings
-    if Embeddings is not None:
-        return Embeddings
+    global Embeddings,labels
+    if Embeddings is not None and labels is not None:
+        return Embeddings,labels
+    
     embedding_manager = FaceEmbeddingManager(emb_path=embeddings_path,)
     _ = embedding_manager.load_embeddings()
-    embeddings,labels = embedding_manager.get_flatten_embeddings()
-    if embeddings is None:
+    Embeddings,labels = embedding_manager.get_flatten_embeddings()
+    if Embeddings is None:
         raise ValueError("Failed to load embeddings. Please check the file format.")
-    return embeddings,labels
+    return Embeddings,labels
 
 
 def recognize_faces_cosine(
@@ -252,9 +262,8 @@ def recognize_faces_cosine(
         # Calculate cosine similarity with the loaded embeddings
         for face, region, embedding in zip(frame_detections, regions, embeddings_batch):
             x, y, w, h = region["x"], region["y"], region["w"], region["h"]
-            best_idx = None
             best_score = -1.0
-
+            best_match = "Unknown"
             for stored_embedding,name in zip(embeddings,labels):
                 score = cosine_similarity([embedding], [stored_embedding])[0][0]
                 if score > best_score:
@@ -350,19 +359,22 @@ def recognize_faces_vectordb(
 if __name__ == "__main__":
     # Example usage
     import time
-    start = time.time()
+    
     test_path = FaceRecogConfig.TEST_PATH  # Path to test images
     frames = []
     for file in os.listdir(test_path):
         if file.endswith(".jpg") or file.endswith(".png") or file.endswith(".jpeg"):
             image_path = os.path.join(test_path, file)
-            image = cv2.imread(image_path, cv2.IMREAD_COLOR_RGB)
+            image = cv2.imread(image_path)
             frames.append(image)
-    results = recognize_faces(frames, input_format="BGR")
+    recognize_faces([image], input_format="BGR") # Warm up
+    start = time.time()
+    results = recognize_faces(frames, input_format="BGR") # Results are in RGB format
     end = time.time()
     print(f"Time taken for face recognition: {end - start:.2f} seconds")
     print("FPS: {:.2f}".format(len(frames)/(end-start)))
     for result in results:
-        cv2.imshow("Recognized Faces", result["frame"])
+        frame= cv2.cvtColor(result["frame"], cv2.COLOR_RGB2BGR)
+        cv2.imshow("Recognized Faces", frame)
         cv2.waitKey(0)
     cv2.destroyAllWindows()
