@@ -4,7 +4,8 @@
 
 # def generate_captions(frames:List[np.array], timestamps,detection_results: List[Dict[str,int]],persons:List[List[str]]):
 #     return ["Dummy caption" for frame in frames]
-
+import os
+import time
 from typing import List, Dict
 import numpy as np
 from PIL import Image
@@ -20,17 +21,19 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from dotenv import load_dotenv
 load_dotenv()
 import gc
-
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"Using device: {DEVICE}")
 # Initialize Supabase client
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 # Initialize Supabase client
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Initialize BLIP model and processor
 processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
-model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base").to("cuda").eval()
+model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base").to(DEVICE).eval()
 
 # Initialize Google Generative AI Embeddings
 embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=GOOGLE_API_KEY)
@@ -111,7 +114,7 @@ def generate_captions(frames: List[np.ndarray], timestamps: List[float], detecti
                     f"Relevant objects in the scene: {objects_str}."
                 )
 
-            inputs = processor(frame, enhanced_prompt, return_tensors="pt").to("cuda")
+            inputs = processor(frame, enhanced_prompt, return_tensors="pt").to(DEVICE)
             with torch.no_grad():
                 out = model.generate(
                     **inputs,
@@ -129,7 +132,7 @@ def generate_captions(frames: List[np.ndarray], timestamps: List[float], detecti
                 caption = caption.replace("a man", persons_str).replace("A man", persons_str)
             frame_results["captions"].append(caption)
 
-            inputs = processor(frame, return_tensors="pt").to("cuda")
+            inputs = processor(frame, return_tensors="pt").to(DEVICE)
             with torch.no_grad():
                 out = model.generate(
                     **inputs,
@@ -161,15 +164,15 @@ def generate_captions(frames: List[np.ndarray], timestamps: List[float], detecti
                     captions_to_print.append(caption)
                     last_caption = caption
 
-            if captions_to_print:
-                print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp/1000))}]")
-                print(f"Objects: {objects_str}")
-                print(f"Persons: {persons_str}")
-                for caption in captions_to_print:
-                    print(caption)
-                print()
-            else:
-                print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp/1000))}] Skipped: No significant change in scene.")
+            # if captions_to_print:
+            #     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp/1000))}]")
+            #     print(f"Objects: {objects_str}")
+            #     print(f"Persons: {persons_str}")
+            #     for caption in captions_to_print:
+            #         print(caption)
+            #     print()
+            # else:
+            #     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp/1000))}] Skipped: No significant change in scene.")
 
             results.append(frame_results)
 
@@ -180,4 +183,4 @@ def generate_captions(frames: List[np.ndarray], timestamps: List[float], detecti
     save_chunk()
     gc.collect()
     torch.cuda.empty_cache()
-    return [result["captions"] for result in results]
+    return [result["captions"][-1] for result in results]

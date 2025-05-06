@@ -5,5 +5,10 @@ scikit-learn== 1.5.0
 fastapi
 uvicorn
 pydantic
-typing-extensions==4.10.0
 python-multipart
+langchain
+langchain-google-genai
+supabase
+python-dotenv 
+transformers
+typing-extensions==4.10.0

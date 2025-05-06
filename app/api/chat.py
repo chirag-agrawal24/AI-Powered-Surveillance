@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from supabase import create_client, Client
@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Initialize FastAPI app
-app = FastAPI(title="CCTV Captioning Chatbot API")
+chat_router = APIRouter()
 
 # Set Google API key
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -93,7 +93,7 @@ Answer:"""
         raise HTTPException(status_code=500, detail=f"Error processing query: {str(e)}")
 
 # GET endpoint
-@app.get("/query")
+@chat_router.get("/query")
 async def get_query(query: str):
     """Handle GET request to process a query."""
     if not query:
@@ -102,7 +102,7 @@ async def get_query(query: str):
     return {"query": query, "response": response}
 
 # POST endpoint
-@app.post("/query")
+@chat_router.post("/query")
 async def post_query(request: QueryRequest):
     """Handle POST request to process a query."""
     if not request.query:
@@ -112,5 +112,7 @@ async def post_query(request: QueryRequest):
 
 # Run the server
 if __name__ == "__main__":
-
+    from fastapi import FastAPI
+    app = FastAPI()
+    app.include_router(chat_router)
     uvicorn.run(app, host="0.0.0.0", port=8000)

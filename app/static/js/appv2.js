@@ -180,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await response.json();
         batchQueue.push({ id: data.batch_id, timestamp: now });
         batchQueue.sort((a, b) => a.id - b.id);
-        requestBatchResult(batchQueue[0], username, cameraNumber);
+        fetchNextBatch();
     } catch (error) {
         console.error('Error processing frames:', error);
         statusText.textContent = 'Processing Error';
@@ -191,15 +191,15 @@ document.addEventListener('DOMContentLoaded', () => {
     async function requestBatchResult(batchEntry, username, cameraNumber) {
         const { id: batchId, timestamp } = batchEntry;
     
-        if (batchIdsWaiting.has(batchId)) return;
+        // if (batchIdsWaiting.has(batchId)) return; // Prevent duplicate requests for the same batch
     
         const now = Date.now();
         const age = now - timestamp;
     
         if (age > STALE_THRESHOLD) {
             console.warn(`Skipping stale batch ${batchId}, in queue for ${age}ms`);
-            batchQueue.shift();
-            fetchNextBatch();
+            batchQueue.shift(); // Remove stale batch from the queue
+            fetchNextBatch();   // Attempt the next batch
             return;
         }
     
@@ -226,7 +226,17 @@ document.addEventListener('DOMContentLoaded', () => {
             clearTimeout(timeout);
     
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                if (response.status === 404) {
+                    // Handle 404 error specifically
+                    console.error(`Error: Resource not found for batch ${batchId}`);
+                    statusText.textContent = `Error: Resource not found (404) for batch ${batchId}`;
+                    statusText.className = 'error';
+                    
+                } else {
+                    // Handle other errors (e.g., 500, 400, etc.)
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return; // Exit the function early if there's an error
             }
     
             const data = await response.json();
@@ -241,9 +251,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 });
     
-                batchIdsWaiting.delete(batchId);
-                batchQueue.shift();
-                fetchNextBatch();
+                batchIdsWaiting.delete(batchId); // Remove batch from waiting set
+                batchQueue.shift();              // Remove batch from the queue
+                fetchNextBatch();                // Call for the next batch in the queue
             }
     
             statusText.textContent = 'Active';
@@ -252,9 +262,20 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error retrieving batch results:', error);
             statusText.textContent = 'Retrieval Error';
             statusText.className = 'error';
-            batchIdsWaiting.delete(batchId);
+            fetchNextBatch()
         }
     }
+    
+    function fetchNextBatch() {
+        // Proceed to the next batch only if the first batch is processed
+        if (batchQueue.length > 0) {
+            const nextBatchEntry = batchQueue[0];
+            const username = usernameInput.value.trim();
+            const cameraNumber = cameraNumberSelect.value;
+            requestBatchResult(nextBatchEntry, username, cameraNumber);
+        }
+    }
+    
     
     
     function renderFramesLoop() {
@@ -295,14 +316,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function fetchNextBatch() {
-        if (batchQueue.length > 0) {
-            const nextBatchId = batchQueue[0];
-            const username = usernameInput.value.trim();
-            const cameraNumber = cameraNumberSelect.value;
-            requestBatchResult(nextBatchId, username, cameraNumber);
-        }
-    }
 
     function updateFPS() {
         const fps = frameCount;

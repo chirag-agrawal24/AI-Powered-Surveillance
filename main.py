@@ -65,7 +65,7 @@ async def warmup():
         username=username,
         batch_id=batch_id,
         camera_number=camera_number,
-        frames=[frame for _ in range(5)]
+        frames=[frame for _ in range(2)]
     )
     result_req = ResultRequest(
         username=username,
