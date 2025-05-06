@@ -69,11 +69,7 @@ h2 {
     background-color: var(--accent-color);
 }
 
-#fps-counter {
-    font-size: 14px;
-    color: var(--primary-color);
-    font-weight: bold;
-}
+
 
 main {
     display: grid;

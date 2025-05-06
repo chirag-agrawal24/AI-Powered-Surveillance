@@ -59,25 +59,22 @@ def numpy_to_base64(image: np.ndarray) -> str:
     base64_str = base64.b64encode(encoded_image.tobytes()).decode('utf-8')
     return base64_str
 
-def decode_recognition(recog_results: List[Dict[str, Any]])-> Tuple[List[np.array],List[List[str]]]:
+def decode_recognition(recog_results: List[Dict[str, Any]])-> Tuple[List[np.array],List[List[Dict]]]:
     annotated_frames ,persons= [],[]
     for result in recog_results:
         annotated_frames.append(result["frame"])
-        persons_in_frame=[]
-        for person_dict in result["recognized_faces"]:
-            persons_in_frame.append(person_dict.get('name',"Unknown"))
-        persons.append(persons_in_frame)
+        persons.append(result["recognized_faces"])
     return annotated_frames,persons
 
 
-def run_detection_and_recognition(frames: List[FrameData]) -> Dict[int, str]:
+def run_detection_and_recognition(frames: List[FrameData]) -> Tuple[Dict[int, str],List[np.array],List[List[Dict]]]:
     np_frames = [get_numpy_frame(frame_data.image_b64) for frame_data in frames]
     detection_results = detect_objects(frames = np_frames)
     recog_results = recognize_faces(frames=np_frames,input_format="RGB")
     annotated_frames,persons = decode_recognition(recog_results)
     return detection_results,annotated_frames,persons
 
-def run_caption_generation(frames: List[FrameData], detection_results: List[Dict[str,int]],persons:List[List[str]]) -> Dict[int, str]:
+def run_caption_generation(frames: List[FrameData], detection_results: List[Dict[str,int]],persons:List[List[Dict]]) -> Dict[int, str]:
     np_frames = [get_numpy_frame(frame_data.image_b64) for frame_data in frames]
     timestamps = [frame_data.timestamp for frame_data in frames]
 
