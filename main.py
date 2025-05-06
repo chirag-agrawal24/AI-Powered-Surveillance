@@ -120,6 +120,9 @@ templates = Jinja2Templates(directory=ServerConfig.TEMPLATES_DIR)
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+@app.get("/v2", response_class=HTMLResponse)
+async def home(request: Request):
+    return templates.TemplateResponse("indexv2.html", {"request": request})
 
 
 @app.post("/api/get_result", response_model=Optional[BatchResponse])
@@ -137,33 +140,56 @@ async def get_result(data: ResultRequest = Body(...)):
 
 
 
-# --- API Endpoints ---
-@app.post("/api/process_batch", status_code=202) # 202 Accepted is suitable here
-async def process_batch_endpoint(batch_req:BatchRequest = Body(...)):
-    """
-    API endpoint to accept a batch of frames for processing.
-    The batch is added to the pipeline queue for asynchronous processing.
-    """
+# # --- API Endpoints ---
+# @app.post("/api/process_batch", status_code=202) # 202 Accepted is suitable here
+# async def process_batch_endpoint(batch_req:BatchRequest = Body(...)):
+#     """
+#     API endpoint to accept a batch of frames for processing.
+#     The batch is added to the pipeline queue for asynchronous processing.
+#     """
     
-    try:
-        batch_id = batch_req.batch_id
-        # batch_id = tracker.get_next_batch_id(batch_req.username, batch_req.camera_number)
-        enqueued = await pipeline.enqueue_batch(
+#     try:
+#         batch_id = batch_req.batch_id
+#         # batch_id = tracker.get_next_batch_id(batch_req.username, batch_req.camera_number)
+#         enqueued = await pipeline.enqueue_batch(
+#             username=batch_req.username,
+#             camera_number=batch_req.camera_number,
+#             batch_id=batch_id,
+#             frames=batch_req.frames
+#         )
+#         if not enqueued:
+#             # Handle cases where enqueueing failed (e.g., duplicate batch ID)
+#              return {"status": "ignored", "batch_id": batch_id, "message": "Batch ID possibly already processed or buffered."}
+
+#         return {"status": "accepted", "batch_id": batch_id, "message": "Batch added to processing queue."}
+#     except Exception as e:
+#         print(f"Error enqueuing batch {batch_id} for {batch_req.username}/{batch_req.camera_number}: {e}")
+#         raise HTTPException(status_code=500, detail="Internal server error during batch enqueueing.")
+
+@app.post("/api/process_batch", status_code=202)
+async def process_batch_endpoint(batch_req: BatchRequest = Body(...)):
+    """
+    Accepts a batch of frames and starts processing asynchronously.
+    Returns immediately with a 202 Accepted.
+    """
+
+    batch_id = batch_req.batch_id
+    
+    # Start processing in the background
+    asyncio.create_task(
+        pipeline.enqueue_batch(
             username=batch_req.username,
             camera_number=batch_req.camera_number,
             batch_id=batch_id,
             frames=batch_req.frames
         )
-        if not enqueued:
-            # Handle cases where enqueueing failed (e.g., duplicate batch ID)
-             return {"status": "ignored", "batch_id": batch_id, "message": "Batch ID possibly already processed or buffered."}
-
-        return {"status": "accepted", "batch_id": batch_id, "message": "Batch added to processing queue."}
-    except Exception as e:
-        print(f"Error enqueuing batch {batch_id} for {batch_req.username}/{batch_req.camera_number}: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error during batch enqueueing.")
-
-
+    )
+    
+    return {
+        "status": "accepted",
+        "batch_id": batch_id,
+        "message": "Batch added to processing queue."
+    }
 @app.post("/api/process_batch_multipart")
 async def process_batch_multipart(
     request: Request,
@@ -209,7 +235,58 @@ async def process_batch_multipart(
         return JSONResponse(status_code=500, content={"detail": "Internal server error during multipart batch enqueueing."})
 
     
+@app.post("/api/v2/process_batch")
+async def process_batch(
+    username: str = Form(...),
+    camera_number: str = Form(...),
+    batch_id: str = Form(...),
+    files: List[UploadFile] = File(...),
+    timestamps: List[str] = Form(...)
+):
+    frames =[]
+    for i, (file, timestamp_str) in enumerate(zip(files, timestamps)):
+        contents = await file.read()
+        timestamp = int(timestamp_str)
 
+        # Optional: process the image using PIL
+        image = Image.open(io.BytesIO(contents))
+
+        # Example: encode back to base64 (optional — if frontend needs it)
+        buffered = io.BytesIO()
+        image.save(buffered, format="JPEG")
+        image_b64 = base64.b64encode(buffered.getvalue()).decode()
+        frames.append(FrameData(
+                frame_number=i,
+                timestamp=timestamp,
+                image_b64=image_b64
+            ))
+    asyncio.create_task(
+        pipeline.enqueue_batch(
+            username=username,
+            camera_number=camera_number,
+            batch_id=batch_id,
+            frames=frames
+        )
+    )
+    
+    return {
+        "status": "accepted",
+        "batch_id": batch_id,
+        "message": "Batch added to processing queue."
+    }
+       
+@app.post("/api/v2/get_result", response_model=Optional[BatchResponse])
+async def get_result_v2(data: ResultRequest = Body(...)):
+    """
+    API endpoint for the frontend to retrieve the results of a specific processed batch.
+    If found, the result is returned and removed from the server buffer.
+    """
+    
+    result = pipeline.get_batch_result(data.username, data.camera_number, data.batch_id)
+    if result is None:
+        # Result not found (either not processed yet, already retrieved, or invalid ID)
+        raise HTTPException(status_code=404, detail=f"Result for Batch ID {data.batch_id} (User: {data.username}, Cam: {data.camera_number}) not found.")
+    return result # FastAPI will automatically serialize the BatchResponse model
 
 
 # --- Main execution ---
