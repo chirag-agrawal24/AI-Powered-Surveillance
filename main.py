@@ -3,15 +3,25 @@ from fastapi import FastAPI, HTTPException
 from contextlib import asynccontextmanager
 
 from pydantic import BaseModel
-from typing import List
+from typing import List,Optional
 
 from app.services import pipeline
-from app.services.pipeline import FrameData
+from app.services.pipeline import FrameData,BatchResponse
 from app.utils.batch_id_utils import BatchIDTracker
 from app.config import BATCH_ID_JSON
 
+from fastapi import APIRouter, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+
+from pathlib import Path
+
+from app.config import ServerConfig
+from app.router import main_router
+
 tracker = BatchIDTracker(BATCH_ID_JSON)
-app = FastAPI(title="Surveillance Backend")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -22,16 +32,58 @@ async def lifespan(app: FastAPI):
     # Shutdown logic
     print("Shutting down...")
 
+app = FastAPI(title="Surveillance Backend",lifespan=lifespan)
+app.include_router(main_router)
+
+class ResultRequest(BaseModel):
+    username: str
+    camera_number: str
+    batch_id: int
 
 
+
+# Mount static files directory
+app.mount("/static", StaticFiles(directory=Path("app/static")), name="static")
+
+# Jinja2 templates directory
+templates = Jinja2Templates(directory=ServerConfig.TEMPLATES_DIR)
+
+
+# ----------- ROUTES -----------
+
+# Home page
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
+
+
+
+
+
+from fastapi import Body
 # --- API Request Model ---
 class BatchRequest(BaseModel):
     username: str
     camera_number: str
     frames: List[FrameData] # Use the FrameData model from pipeline
+@app.post("/api/get_result", response_model=Optional[BatchResponse])
+async def get_result(data: "ResultRequest" = Body(...)):
+    """
+    API endpoint for the frontend to retrieve the results of a specific processed batch.
+    If found, the result is returned and removed from the server buffer.
+    """
+    # print(data)
+    result = pipeline.get_batch_result(data.username, data.camera_number, data.batch_id)
+    if result is None:
+        # Result not found (either not processed yet, already retrieved, or invalid ID)
+        raise HTTPException(status_code=404, detail=f"Result for Batch ID {data.batch_id} (User: {data.username}, Cam: {data.camera_number}) not found.")
+    return result # FastAPI will automatically serialize the BatchResponse model
+
+
 
 # --- API Endpoints ---
-@app.post("/process_batch", status_code=202) # 202 Accepted is suitable here
+@app.post("/api/process_batch", status_code=202) # 202 Accepted is suitable here
 async def process_batch_endpoint(batch_req: BatchRequest):
     """
     API endpoint to accept a batch of frames for processing.
@@ -55,17 +107,6 @@ async def process_batch_endpoint(batch_req: BatchRequest):
         print(f"Error enqueuing batch {batch_id} for {batch_req.username}/{batch_req.camera_number}: {e}")
         raise HTTPException(status_code=500, detail="Internal server error during batch enqueueing.")
 
-@app.get("/get_result/{username}/{camera_number}/{batch_id}", response_model=Optional[BatchResponse])
-async def get_result_endpoint(username: str, camera_number: str, batch_id: int):
-    """
-    API endpoint for the frontend to retrieve the results of a specific processed batch.
-    If found, the result is returned and removed from the server buffer.
-    """
-    result = pipeline.get_batch_result(username, camera_number, batch_id)
-    if result is None:
-        # Result not found (either not processed yet, already retrieved, or invalid ID)
-        raise HTTPException(status_code=404, detail=f"Result for Batch ID {batch_id} (User: {username}, Cam: {camera_number}) not found.")
-    return result # FastAPI will automatically serialize the BatchResponse model
 
 
 # --- Main execution ---

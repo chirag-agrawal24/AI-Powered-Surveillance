@@ -361,9 +361,12 @@ if __name__ == "__main__":
     import time
     
     test_path = FaceRecogConfig.TEST_PATH  # Path to test images
+    save_test_path = FaceRecogConfig.TEST_SAVE_FOLDER
     frames = []
+    files=[]
     for file in os.listdir(test_path):
         if file.endswith(".jpg") or file.endswith(".png") or file.endswith(".jpeg"):
+            files.append(file)
             image_path = os.path.join(test_path, file)
             image = cv2.imread(image_path)
             frames.append(image)
@@ -373,8 +376,10 @@ if __name__ == "__main__":
     end = time.time()
     print(f"Time taken for face recognition: {end - start:.2f} seconds")
     print("FPS: {:.2f}".format(len(frames)/(end-start)))
-    for result in results:
+    for idx,result in enumerate(results):
         frame= cv2.cvtColor(result["frame"], cv2.COLOR_RGB2BGR)
         cv2.imshow("Recognized Faces", frame)
+        save_path = os.path.join(save_test_path,files[idx]) 
+        cv2.imwrite(save_path,frame)
         cv2.waitKey(0)
     cv2.destroyAllWindows()

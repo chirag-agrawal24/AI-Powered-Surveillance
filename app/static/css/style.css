@@ -1,0 +1,383 @@
+:root {
+    --primary-color: #2c3e50;
+    --secondary-color: #3498db;
+    --accent-color: #e74c3c;
+    --background-color: #ecf0f1;
+    --text-color: #333;
+    --border-radius: 5px;
+    --box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+h1 {
+    color: var(--primary-color);
+    font-size: 28px;
+}
+
+h2 {
+    color: var(--primary-color);
+    font-size: 20px;
+    margin-bottom: 15px;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+#status-text {
+    background-color: #f39c12;
+    color: white;
+    padding: 5px 10px;
+    border-radius: var(--border-radius);
+    font-size: 14px;
+}
+
+#status-text.active {
+    background-color: #27ae60;
+}
+
+#status-text.error {
+    background-color: var(--accent-color);
+}
+
+#fps-counter {
+    font-size: 14px;
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+main {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 30px;
+}
+
+.video-section, .results-section {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 20px;
+    box-shadow: var(--box-shadow);
+}
+
+.video-container {
+    position: relative;
+    margin-bottom: 15px;
+    aspect-ratio: 16/9;
+    background-color: #000;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+#preview-canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+button {
+    background-color: var(--secondary-color);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #2980b9;
+}
+
+button:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+}
+
+#stop-btn {
+    background-color: var(--accent-color);
+}
+
+#stop-btn:hover {
+    background-color: #c0392b;
+}
+
+.settings {
+    display: flex;
+    gap: 15px;
+}
+
+.settings label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+}
+
+select {
+    padding: 5px;
+    border-radius: var(--border-radius);
+    border: 1px solid #ddd;
+}
+
+.results-container {
+    height: 350px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+    padding: 10px;
+}
+
+#detection-results {
+    list-style: none;
+}
+
+#detection-results li {
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: var(--border-radius);
+    border-left: 3px solid var(--secondary-color);
+    animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.stats {
+    display: flex;
+    justify-content: space-between;
+}
+
+.stat-item {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: var(--border-radius);
+    font-size: 14px;
+}
+
+.stat-label {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+@media (max-width: 768px) {
+    main {
+        grid-template-columns: 1fr;
+    }
+    
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .settings {
+        margin-top: 10px;
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+/* Add these styles to your existing CSS file */
+#detection-results {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    position: relative;
+}
+
+#detection-results li {
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    background-color: #f8f9fa;
+    border-radius: var(--border-radius);
+    border-left: 3px solid var(--secondary-color);
+    transition: all 0.5s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+#detection-results li.new-item {
+    animation: slideInDown 0.5s forwards;
+}
+
+#detection-results li.removing {
+    animation: fadeOut 0.5s forwards;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    opacity: 0;
+}
+
+@keyframes slideInDown {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        max-height: 60px; /* Approximate height of an item */
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        max-height: 0;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+}
+
+/* Add these styles to your CSS */
+.result-group {
+    margin-bottom: 15px;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: var(--border-radius);
+    border-left: 3px solid var(--secondary-color);
+    transition: all 0.5s ease;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.result-group.new-group {
+    opacity: 0;
+    transform: translateY(-15px);
+}
+
+.result-group.removing-group {
+    opacity: 0;
+    max-height: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    transform: translateY(15px);
+    overflow: hidden;
+}
+
+.result-item {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.result-item:last-child {
+    margin-bottom: 0;
+}
+
+.result-timestamp {
+    color: var(--primary-color);
+    font-weight: bold;
+    display: inline-block;
+    min-width: 70px;
+}
+
+/* Update the results container styles */
+.results-container {
+    height: 350px;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+}
+
+/* Make sure the detection-results list style is updated */
+#detection-results {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* Add these styles to your existing CSS */
+.result-group {
+    margin-bottom: 15px;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: var(--border-radius);
+    border-left: 3px solid var(--secondary-color);
+    transition: all 0.5s ease;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.result-group.new-group {
+    opacity: 0;
+    transform: translateY(-15px);
+}
+
+.result-group.removing-group {
+    opacity: 0;
+    max-height: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    transform: translateY(15px);
+    overflow: hidden;
+}
+
+.result-item {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.result-item:last-child {
+    margin-bottom: 0;
+}
+
+.result-timestamp {
+    color: var(--primary-color);
+    font-weight: bold;
+    display: inline-block;
+    min-width: 70px;
+}

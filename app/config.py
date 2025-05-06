@@ -32,6 +32,7 @@ class FaceRecogConfig:
     ALIGN_FACES: bool = False  # Whether to align faces before recognition
     RECOGNIZER : str = "COSINE"  # Options: "SVM", "COSINE"
     TEST_PATH: Path = Path(__file__).parent.resolve() / "../data/input/face_recog/test"
+    TEST_SAVE_FOLDER:Path = Path(__file__).parent.resolve() / "../data/input/face_recog/test_result"
 
 
 
@@ -66,6 +67,7 @@ class ObjectDetectionConfig:
     DETECTOR_BACKEND: str = "yolov11n"
     DEVICE: str = "cuda"  # Options: "cpu", "cuda"
     TEST_PATH: Path = Path(__file__).parent.resolve() / "../data/input/obj_det/test_images"
+    
 
 @dataclass
 class ServerConfig:
@@ -74,7 +76,7 @@ class ServerConfig:
     PORT: int = 8000
     DEBUG: bool = True
     WORKERS: int = 1
-    STATIC_DIR: Path = Path(__file__).parent.resolve() / "static"
-    TEMPLATES_DIR: Path = Path(__file__).parent.resolve() / "templates"
+    STATIC_DIR: str  = "app/static"
+    TEMPLATES_DIR: str =  "app/templates"
 
 BATCH_ID_JSON = Path(__file__).parent.resolve()/"utils/batch_id.json"

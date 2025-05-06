@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Surveillance System</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Real-Time Surveillance System</h1>
+            <div class="status-indicator">
+                <span id="status-text">Initializing...</span>
+                <span id="fps-counter"></span>
+            </div>
+        </header>
+
+        <main>
+            <div class="video-section">
+                <h2>Processed Surveillance Feed</h2>
+                <div class="video-container">
+                    <video id="camera-feed" style="display: none;" autoplay playsinline></video>
+                    <canvas id="preview-canvas"></canvas>
+                    <img id="processed-frame" alt="Processed frame" style="display: none;">
+                </div>
+                <div class="controls">
+                    <!-- User input field -->
+                    <label>
+                        Username:
+                        <input type="text" id="username" placeholder="Enter username">
+                    </label>
+                    <!-- Camera number dropdown -->
+                    <label>
+                        Camera Number:
+                        <select id="camera-number">
+                            <option value="1">Camera 1</option>
+                            <option value="2">Camera 2</option>
+                            <option value="3" selected>Camera 3</option>
+                            <option value="4">Camera 4</option>
+                        </select>
+                    </label>
+
+                    <button id="start-btn">Start Camera</button>
+                    <button id="stop-btn" disabled>Stop Camera</button>
+                    <div class="settings">
+                        <label>
+                            FPS (Batch Size):
+                            <select id="fps-setting">
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="15" selected>15</option>
+                                <option value="30">30</option>
+                            </select>
+                        </label>
+                        <!-- Add this new setting -->
+                        <label>
+                            Results to show:
+                            <select id="max-results">
+                                <option value="5">5</option>
+                                <option value="10" selected>10</option>
+                                <option value="15">15</option>
+                                <option value="20">20</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-section">
+                <h2>Detection Results</h2>
+                <div class="results-container">
+                    <ul id="detection-results"></ul>
+                </div>
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Processing Time:</span>
+                        <span id="processing-time">0 ms</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Queue Size:</span>
+                        <span id="queue-size">0</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

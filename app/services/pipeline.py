@@ -42,32 +42,31 @@ results_buffer: Dict[str, Dict[str, Dict[int, BatchResponse]]] = defaultdict(lam
 def get_numpy_frame(frame: str) -> np.ndarray:
     img_data = base64.b64decode(frame)
     nparr = np.frombuffer(img_data, np.uint8)
-    
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)  # This gives you a BGR image
-    rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) # Convert BGR to RGB
-
-    return rgb_img
-
+    # if img is None:
+    #     print("Image decoding failed. Skipping image")
+    #     return np.zeros((360, 640, 3), dtype=np.uint8)  # Replace with blank image to prevent issues
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    return img # Convert BGR to RGB
 
 def numpy_to_base64(image: np.ndarray) -> str:
     # Convert RGB to BGR for OpenCV
     bgr_image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    
-    # Encode image as PNG (or use '.jpg' if preferred)
-    success, encoded_image = cv2.imencode('.png', bgr_image)
-    
+    # Encode image as JPEG (use .jpg if preferred)
+    success, encoded_image = cv2.imencode('.jpg', bgr_image)
     if not success:
-        print("Image encoding failed.Skipping image")
-    
-    # Convert to base64
+        print("Image encoding failed. Skipping image")
     base64_str = base64.b64encode(encoded_image.tobytes()).decode('utf-8')
-    
     return base64_str
+
 def decode_recognition(recog_results: List[Dict[str, Any]])-> Tuple[List[np.array],List[List[str]]]:
     annotated_frames ,persons= [],[]
     for result in recog_results:
         annotated_frames.append(result["frame"])
-        persons.append(result["recognized_faces"])
+        persons_in_frame=[]
+        for person_dict in result["recognized_faces"]:
+            persons_in_frame.append(person_dict.get('name',"Unknown"))
+        persons.append(persons_in_frame)
     return annotated_frames,persons
 
 
@@ -98,7 +97,7 @@ async def detection_recognition_worker():
 async def caption_worker():
     while True:
         username, camera_number, batch_id, frames, detection_results,annotated_frames,persons = await caption_queue.get()
-        captions = run_caption_generation(frames, detection_results,persons)
+        captions = run_caption_generation(frames,detection_results,persons)
 
         results = [FrameResult(
             frame_number=f.frame_number,
