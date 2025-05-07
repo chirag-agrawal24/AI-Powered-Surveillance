@@ -1,5 +1,6 @@
 # services.py
 import asyncio
+import concurrent.futures
 from collections import defaultdict
 from pydantic import BaseModel
 from typing import List, Dict, Optional,Tuple,Any
@@ -12,6 +13,8 @@ from app.services.face_recognizer import recognize_faces
 from app.services.caption_generator import generate_captions
 
 
+
+CAPTION_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 # --- Data Models ---
 class FrameData(BaseModel):
     frame_number: int
@@ -92,9 +95,17 @@ async def detection_recognition_worker():
         input_queue.task_done()
 
 async def caption_worker():
+    loop = asyncio.get_running_loop()
     while True:
         username, camera_number, batch_id, frames, detection_results,annotated_frames,persons = await caption_queue.get()
-        captions = run_caption_generation(frames,detection_results,persons)
+        captions = await loop.run_in_executor(
+        CAPTION_EXECUTOR,
+        run_caption_generation,            # func
+        frames,                       # arg-1
+        detection_results,            # arg-2
+        persons                       # arg-3
+        )
+        # captions = run_caption_generation(frames,detection_results,persons)
 
         results = [FrameResult(
             frame_number=f.frame_number,

@@ -164,15 +164,15 @@ def generate_captions(frames: List[np.ndarray], timestamps: List[float], detecti
                     captions_to_print.append(caption)
                     last_caption = caption
 
-            # if captions_to_print:
-            #     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp/1000))}]")
-            #     print(f"Objects: {objects_str}")
-            #     print(f"Persons: {persons_str}")
-            #     for caption in captions_to_print:
-            #         print(caption)
-            #     print()
-            # else:
-            #     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp/1000))}] Skipped: No significant change in scene.")
+            if captions_to_print:
+                print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp/1000))}]")
+                print(f"Objects: {objects_str}")
+                print(f"Persons: {persons_str}")
+                for caption in captions_to_print:
+                    print(caption)
+                print()
+            else:
+                print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp/1000))}] Skipped: No significant change in scene.")
 
             results.append(frame_results)
 
